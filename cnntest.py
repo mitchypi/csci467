@@ -8,6 +8,8 @@ from PIL import Image, ImageStat
 import numpy as np
 from sklearn.metrics import precision_score, recall_score, f1_score
 import matplotlib.pyplot as plt
+import os
+from torchvision.utils import save_image
 
 
 dataset = load_dataset("trpakov/chest-xray-classification", "full")
@@ -85,25 +87,6 @@ for epoch in range(NUM_EPOCHS):
     validation_accuracy_per_epoch.append(epoch_accuracy)
     print(f'Validation Accuracy: {epoch_accuracy}%')
 
-# Plotting
-plt.figure(figsize=(12, 6))
-plt.subplot(1, 2, 1)
-plt.plot(range(1, NUM_EPOCHS + 1), loss_per_epoch, marker='o', color='r')
-plt.title('Loss per Epoch')
-plt.xlabel('Epoch')
-plt.ylabel('Loss')
-plt.grid(True)
-
-plt.subplot(1, 2, 2)
-plt.plot(range(1, NUM_EPOCHS + 1), validation_accuracy_per_epoch, marker='o', color='b')
-plt.title('Validation Accuracy per Epoch')
-plt.xlabel('Epoch')
-plt.ylabel('Accuracy (%)')
-plt.grid(True)
-
-plt.tight_layout()
-plt.show()
-
 def evaluate_model(model, data_loader):
     model.eval()
     all_labels = []
@@ -124,10 +107,14 @@ def evaluate_model(model, data_loader):
 
     return precision, recall, f1
 
-def test(model, test_loader, device):
+def test_and_save_misclassified(model, test_loader, device, save_dir="misclassified_images"):
     model.eval()
     all_labels = []
     all_predictions = []
+
+    # Create a directory for saving misclassified images
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
 
     with torch.no_grad():
         for images, labels in test_loader:
@@ -138,29 +125,34 @@ def test(model, test_loader, device):
             all_labels.extend(labels.cpu().numpy())
             all_predictions.extend(predicted.cpu().numpy())
 
+            # Identify and save misclassified images
+            for i, (label, pred) in enumerate(zip(labels, predicted)):
+                if label != pred:
+                    # Create a subdirectory for each type of misclassification
+                    misclassified_subdir = os.path.join(save_dir, f"actual_{label.item()}_predicted_{pred.item()}")
+                    if not os.path.exists(misclassified_subdir):
+                        os.makedirs(misclassified_subdir)
+
+                    # Save the misclassified image
+                    img_path = os.path.join(misclassified_subdir, f"misclassified_{i}.png")
+                    save_image(images[i].cpu(), img_path)
+
     # Convert lists to numpy arrays for element-wise comparison
     all_labels = np.array(all_labels)
     all_predictions = np.array(all_predictions)
 
-    accuracy = (all_predictions == all_labels).mean()  # Now this should work
+    accuracy = (all_predictions == all_labels).mean()
     precision = precision_score(all_labels, all_predictions)
     recall = recall_score(all_labels, all_predictions)
     f1 = f1_score(all_labels, all_predictions)
 
     return accuracy, precision, recall, f1
 
-accuracy, precision, recall, f1 = test(model, test_loader, device)
+# Using the updated function
+accuracy, precision, recall, f1 = test_and_save_misclassified(model, test_loader, device)
 print(f'Test Accuracy: {accuracy * 100:.2f}%')
 print(f'Precision: {precision:.2f}')
 print(f'Recall: {recall:.2f}')
 print(f'F1 Score: {f1:.2f}')
-
-# Example usage during training
-precision, recall, f1 = evaluate_model(model, val_loader)
-print(f'Validation Precision: {precision}, Recall: {recall}, F1 Score: {f1}')
-
-# Example usage after training (on test set)
-precision, recall, f1 = evaluate_model(model, test_loader)
-print(f'Test Precision: {precision}, Recall: {recall}, F1 Score: {f1}')
 
                  

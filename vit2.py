@@ -39,7 +39,6 @@ training_args = TrainingArguments(
     num_train_epochs=5,
     evaluation_strategy="epoch",
     auto_find_batch_size=True
-
 )
 
 # Define metrics computation function
@@ -64,7 +63,8 @@ trainer = Trainer(
     args=training_args,
     train_dataset=encoded_dataset["train"],
     eval_dataset=encoded_dataset["validation"],
-    compute_metrics=compute_metrics
+    compute_metrics=compute_metrics,
+    
 )
 
 # Train the model
@@ -92,35 +92,41 @@ eval_loss = []
 train_accuracy = []
 eval_accuracy = []
 
-for entry in training_history:
-    if 'loss' in entry:
-        epochs.append(entry['epoch'])
-        train_loss.append(entry['loss'])
-    if 'eval_loss' in entry:
-        eval_loss.append(entry['eval_loss'])
-    if 'eval_accuracy' in entry:
-        eval_accuracy.append(entry['eval_accuracy'])
+train_epochs = [entry['epoch'] for entry in training_history if 'loss' in entry]
+train_losses = [entry['loss'] for entry in training_history if 'loss' in entry]
+
+# Prepare Data for Evaluation Loss and Accuracy Plot
+eval_epochs = [entry['epoch'] for entry in training_history if 'eval_loss' in entry]
+eval_losses = [entry['eval_loss'] for entry in training_history if 'eval_loss' in entry]
+eval_accuracies = [entry['eval_accuracy'] for entry in training_history if 'eval_accuracy' in entry]
 
 # Plotting
-plt.figure(figsize=(12, 5))
+plt.figure(figsize=(15, 5))
 
-# Plot training and validation loss
-plt.subplot(1, 2, 1)
-plt.plot(epochs, train_loss, label='Training Loss')
-plt.plot(epochs, eval_loss, label='Validation Loss')
-plt.title('Training and Validation Loss per Epoch')
+# Plot Training Loss
+plt.subplot(1, 3, 1)
+plt.plot(train_epochs, train_losses, label='Training Loss')
+plt.title('Training Loss per Epoch')
 plt.xlabel('Epoch')
 plt.ylabel('Loss')
 plt.legend()
 
-# Plot training accuracy
-plt.subplot(1, 2, 2)
-plt.plot(epochs, eval_accuracy, label='Validation Accuracy')
+# Plot Evaluation Loss
+plt.subplot(1, 3, 2)
+plt.plot(eval_epochs, eval_losses, label='Validation Loss')
+plt.title('Validation Loss per Epoch')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.legend()
+
+# Plot Evaluation Accuracy
+plt.subplot(1, 3, 3)
+plt.plot(eval_epochs, eval_accuracies, label='Validation Accuracy')
 plt.title('Validation Accuracy per Epoch')
 plt.xlabel('Epoch')
 plt.ylabel('Accuracy')
 plt.legend()
 
 plt.tight_layout()
-#save plot 
-plt.savefig('plot.png')
+plt.savefig('training_evaluation_plots.png')
+plt.show()
