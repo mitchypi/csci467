@@ -31,23 +31,18 @@ actual_labels = predictions.label_ids
 misclassified_indices = np.where(pred_labels != actual_labels)[0]
 
 for idx in misclassified_indices:
-    idx = int(idx)  # Convert NumPy int64 to native Python int
+    idx = int(idx)  
 
-    # Actual and predicted labels for the misclassified image
     actual_label = actual_labels[idx]
     predicted_label = pred_labels[idx]
 
-    # Folder for this type of misclassification
     misclassification_type_folder = f"misclassified_images/actual_{actual_label}_predicted_{predicted_label}"
 
-    # Create the folder if it doesn't exist
     if not os.path.exists(misclassification_type_folder):
         os.makedirs(misclassification_type_folder)
 
-    # Directly access the image object
     image = dataset["test"][idx]["image"]
 
-    # Save the image in the corresponding folder
     image_path = os.path.join(misclassification_type_folder, f"{idx}_misclassified.png")
     image.save(image_path)
 

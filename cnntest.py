@@ -25,10 +25,10 @@ preprocess = transforms.Compose([
 ])
 
 def transform(batch):
-    images = [preprocess(item['image']) for item in batch]  # Apply preprocessing to images
-    labels = [item['labels'] for item in batch]  # Extract labels
+    images = [preprocess(item['image']) for item in batch]
+    labels = [item['labels'] for item in batch]
 
-    return torch.stack(images), torch.tensor(labels)  # Convert labels to tensor directly
+    return torch.stack(images), torch.tensor(labels)
 
 
 train_dataset = dataset['train']
@@ -50,11 +50,9 @@ optimizer = optim.Adam(model.parameters(), lr=0.01)
 
 
 
-# Lists to store loss and accuracy
 loss_per_epoch = []
 validation_accuracy_per_epoch = []
 
-# Training and validation loop
 for epoch in range(NUM_EPOCHS):
     model.train()
     running_loss = 0.0
@@ -71,7 +69,6 @@ for epoch in range(NUM_EPOCHS):
     loss_per_epoch.append(epoch_loss)
     print(f'Epoch [{epoch + 1}/{NUM_EPOCHS}], Loss: {epoch_loss}')
 
-    # Validation
     model.eval()
     correct = 0
     total = 0
@@ -112,7 +109,6 @@ def test_and_save_misclassified(model, test_loader, device, save_dir="misclassif
     all_labels = []
     all_predictions = []
 
-    # Create a directory for saving misclassified images
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
@@ -125,19 +121,15 @@ def test_and_save_misclassified(model, test_loader, device, save_dir="misclassif
             all_labels.extend(labels.cpu().numpy())
             all_predictions.extend(predicted.cpu().numpy())
 
-            # Identify and save misclassified images
             for i, (label, pred) in enumerate(zip(labels, predicted)):
                 if label != pred:
-                    # Create a subdirectory for each type of misclassification
                     misclassified_subdir = os.path.join(save_dir, f"actual_{label.item()}_predicted_{pred.item()}")
                     if not os.path.exists(misclassified_subdir):
                         os.makedirs(misclassified_subdir)
 
-                    # Save the misclassified image
                     img_path = os.path.join(misclassified_subdir, f"misclassified_{i}.png")
                     save_image(images[i].cpu(), img_path)
 
-    # Convert lists to numpy arrays for element-wise comparison
     all_labels = np.array(all_labels)
     all_predictions = np.array(all_predictions)
 
@@ -148,7 +140,6 @@ def test_and_save_misclassified(model, test_loader, device, save_dir="misclassif
 
     return accuracy, precision, recall, f1
 
-# Using the updated function
 accuracy, precision, recall, f1 = test_and_save_misclassified(model, test_loader, device)
 print(f'Test Accuracy: {accuracy * 100:.2f}%')
 print(f'Precision: {precision:.2f}')
